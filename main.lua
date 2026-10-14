@@ -2,6 +2,14 @@ local ADDON_NAME = 'NewMapPins'
 local ADDON_VERSION = 'X'
 local EVENT_NAMESPACE = ADDON_NAME..'_EVENT_NAMESPACE'
 
+local function _t(filename)
+	return ('/%s/textures/%s'):format(ADDON_NAME, filename)
+end
+
+local function _getFileName()
+    return GetMapTileTexture():match('[^\\/]+$'):lower():gsub('%.dds$', ''):gsub('_[0-9]+$', '')
+end
+
 -- ----------------------------------------------------------------------------
 
 -- Q: what 1..21 means? No 20?
@@ -36,23 +44,511 @@ local DEFAULTS_GLOBAL = {
     pinsize = 20,
 }
 
+local DEFAULT_PIN_SIZE = 20
+
+local DELVE_BOSSES = 1
+local DELVE_BOSSES_DONE = 2
+local SKYSHARDS = 3
+local SKYSHARDS_DONE = 4
+local LOREBOOKS = 5
+-- local LOREBOOKS_DONE = 1005
+local TREASURE_MAPS = 6
+local TREASURE_CHESTS = 7
+local UNKNOWN_POI = 8
+local UNDAUNTED = 9
+
+
+-- local function _simpleCoordinatesFrom(table)
+-- 	return function(self, canvas)
+-- 		local map = _getFileName()
+-- 		local pinData = MP[table][map]
+-- 		for i = 1, #pinData do
+-- 			local pinDatum = pinData[i]
+-- 			canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {i, map})
+-- 		end
+-- 	end
+-- end
+
+
+local PinTypes_ = {}
+
+PinTypes_[DELVE_BOSSES] = {
+	name = MAP_PINS_SI_DELVE_BOSSES,  -- TODO: think about direct GetText vs late evaluation
+	maxDistance = 0.05,
+	level = 30,
+	texture = '/esoui/art/icons/poi/poi_groupboss_incomplete.dds',
+	size = 25,
+	coords = 'Bosses',
+	addPins = function(self, canvas)
+		local map = _getFileName()
+		local pinData = MP['Bosses'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local achievementId, criterionIndex = pinDatum[3], pinDatum[4]
+			local description, numCompleted, numRequired = GetAchievementCriterion(achievementId, criterionIndex)
+			if numCompleted ~= numRequired then
+				canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {i, map})
+			end
+		end
+	end,
+	getPins = function(self)
+		local map = _getFileName()
+		local pinData = MP['Bosses'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		local outX, outY, atlasIndex, extra = {}, {}, {}, {}
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local achievementId, criterionIndex = pinDatum[3], pinDatum[4]
+			local description, numCompleted, numRequired = GetAchievementCriterion(achievementId, criterionIndex)
+			if numCompleted ~= numRequired then
+				local j = #outX + 1
+				outX[j] = pinDatum[1]
+				outY[j] = pinDatum[2]
+				atlasIndex[j] = nil
+				extra[j] = {achievementId, criterionIndex}
+			end
+		end
+
+		return outX, outY, atlasIndex, extra
+	end
+}
+-- TODO: STYLE IT LATER
+PinTypes_[DELVE_BOSSES_DONE] = {
+	name = MAP_PINS_SI_DELVE_BOSSES_DONE,
+	maxDistance = 0.05,
+	level = 30,  -- TODO: never used yet
+	texture = '/esoui/art/icons/poi/poi_groupboss_complete.dds',
+	size = 25,
+	addPins = function(self, canvas)
+		local map = _getFileName()
+		local pinData = MP['Bosses'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local achievementId, criterionIndex = pinDatum[3], pinDatum[4]
+			local description, numCompleted, numRequired = GetAchievementCriterion(achievementId, criterionIndex)
+			if numCompleted == numRequired then
+				canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {i, map})
+			end
+		end
+	end,
+	getPins = function(self)
+		local map = _getFileName()
+		local pinData = MP['Bosses'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		local outX, outY, atlasIndex, extra = {}, {}, {}, {}
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local achievementId, criterionIndex = pinDatum[3], pinDatum[4]
+			local description, numCompleted, numRequired = GetAchievementCriterion(achievementId, criterionIndex)
+			if numCompleted == numRequired then
+				local j = #outX + 1
+				outX[j] = pinDatum[1]
+				outY[j] = pinDatum[2]
+				atlasIndex[j] = nil
+				extra[j] = {achievementId, criterionIndex}
+			end
+		end
+
+		return outX, outY, atlasIndex, extra
+	end
+}
+
+PinTypes_[SKYSHARDS] = {
+	name = MAP_PINS_SI_SKYSHARDS,
+	maxDistance = 0.05,
+	level = 100,
+	texture = _t('Skyshard_1.dds'),
+	size = 28,
+	addPins = function(self, canvas)
+		local map = _getFileName()
+		local pinData = MP['SkyShards'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local skyshardId = pinDatum[5]  -- TODO: what about 3 and 4? Why logic in legacy is so complex? Ask about DumbSkyshardFix
+			local skyshardDiscoveryStatus = GetSkyshardDiscoveryStatus(skyshardId)
+			if skyshardDiscoveryStatus ~= SKYSHARD_DISCOVERY_STATUS_ACQUIRED then
+				canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {i, map})
+			end
+		end
+	end,
+	getPins = function(self)
+		local map = _getFileName()
+		local pinData = MP['SkyShards'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		local outX, outY, atlasIndex, extra = {}, {}, {}, {}
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local skyshardId = pinDatum[5]  -- TODO: what about 3 and 4? Why logic in legacy is so complex? Ask about DumbSkyshardFix
+			local skyshardDiscoveryStatus = GetSkyshardDiscoveryStatus(skyshardId)
+			if skyshardDiscoveryStatus ~= SKYSHARD_DISCOVERY_STATUS_ACQUIRED then
+				local j = #outX + 1
+				outX[j] = pinDatum[1]
+				outY[j] = pinDatum[2]
+				atlasIndex[j] = nil
+				extra[j] = skyshardId
+			end
+		end
+
+		return outX, outY, atlasIndex, extra
+	end
+}
+
+PinTypes_[SKYSHARDS_DONE] = {
+	name = MAP_PINS_SI_SKYSHARDS_DONE,
+	maxDistance=0.05,level=100,texture='/esoui/art/tutorial/gamepad/achievement_categoryicon_skyshards.dds',
+	size = 28,  -- 1.38 * 20 - does 0.02 actually matter?
+	addPins = function(self, canvas)
+		local map = _getFileName()
+		local pinData = MP['SkyShards'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local skyshardId = pinDatum[5]  -- TODO: what about 3 and 4? Why logic in legacy is so complex?
+			local skyshardDiscoveryStatus = GetSkyshardDiscoveryStatus(skyshardId)
+			if skyshardDiscoveryStatus == SKYSHARD_DISCOVERY_STATUS_ACQUIRED then
+				canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {i, map})
+			end
+		end
+	end,
+	getPins = function(self)
+		local map = _getFileName()
+		local pinData = MP['SkyShards'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		local outX, outY, atlasIndex, extra = {}, {}, {}, {}
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local skyshardId = pinDatum[5]  -- TODO: what about 3 and 4? Why logic in legacy is so complex? Ask about DumbSkyshardFix
+			local skyshardDiscoveryStatus = GetSkyshardDiscoveryStatus(skyshardId)
+			if skyshardDiscoveryStatus == SKYSHARD_DISCOVERY_STATUS_ACQUIRED then
+				local j = #outX + 1
+				outX[j] = pinDatum[1]
+				outY[j] = pinDatum[2]
+				atlasIndex[j] = nil
+				extra[j] = skyshardId
+			end
+		end
+
+		return outX, outY, atlasIndex, extra
+	end
+}
+
+PinTypes_[LOREBOOKS] = {
+	name = MAP_PINS_SI_LOREBOOKS,
+	maxDistance=0.05,level=100,texture=_t('Lorebook_1.dds'),tint=ZO_ColorDef:New(.6,.6,1,.8),
+	addPins = function(self, canvas)
+		local map = _getFileName()
+		local pinData = MP['Lorebooks'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local collectionIndex, bookIndex = pinDatum[3], pinDatum[4]
+			local title, icon, known, bookId = GetLoreBookInfo(1, collectionIndex, bookIndex)
+			if not known then
+				canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {i, map})
+			end
+		end
+	end,
+	getPins = function(self)
+		local map = _getFileName()
+		local pinData = MP['Lorebooks'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		local outX, outY, atlasIndex, extra = {}, {}, {}, {}
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local collectionIndex, bookIndex = pinDatum[3], pinDatum[4]
+			local title, icon, known, bookId = GetLoreBookInfo(1, collectionIndex, bookIndex)
+			if not known then
+				local j = #outX + 1
+				outX[j] = pinDatum[1]
+				outY[j] = pinDatum[2]
+				atlasIndex[j] = nil
+				extra[j] = bookId
+			end
+		end
+
+		return outX, outY, atlasIndex, extra
+	end
+}
+
+-- PinTypes_[LOREBOOKS_DONE] = {
+--  name = MAP_PINS_SI_LOREBOOKS_DONE,
+-- 	maxDistance=0.05,level=30,texture=texture('Lorebook_2.dds'),k=1,tint=ZO_ColorDef:New(.6,.6,1,.8)
+--  coords = 'Lorebooks',
+-- }
+
+local TREASURE_MAP_TEXTURES = {
+	['staff']    = 5,
+    ['2hsword']  = 6,
+    ['bow']      = 7,
+    ['1haxe']    = 8,
+    ['shield']   = 9,
+    ['2haxe']    = 10,
+    ['dagger']   = 11,
+    ['1hhammer'] = 12,
+    ['1hsword']  = 13,
+    ['2hhammer'] = 14,
+}
+PinTypes_[TREASURE_MAPS] = {
+	name = MAP_PINS_SI_TREASURE_MAPS,
+	maxDistance = 0.05,
+	level = 101,
+	-- texture = function(self) return self.m_PinTag.texture end,
+	-- def_texture = _texture('Treasure_1.dds'),
+	size = 28,
+	atlas = _t('dummy8x2.dds'),
+	atlasW = 8,
+	atlasH = 2,
+	getPins = function(self)
+		local map = _getFileName()
+		local pinData = MP['TreasureMaps'][map]
+
+		if not pinData then return end  -- TODO: add diagnostic warn
+
+		-- TODO: have not checked if it can be optimized further
+		local backpackTrophies = {}
+		for _, itemData in pairs(SHARED_INVENTORY:GenerateFullSlotData(nil, BAG_BACKPACK)) do
+			if itemData and itemData.itemType == ITEMTYPE_TROPHY then
+				local itemId = GetItemId(BAG_BACKPACK, itemData.slotIndex)
+				backpackTrophies[itemId] = itemData  -- TODO: it overwrites (OK imo, reevaluate later) 
+			end
+		end
+
+		local outX, outY, atlasIndices, extra = {}, {}, {}, {}
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			local itemId, someIdentifier = pinDatum[3], pinDatum[4]
+
+			local itemData = backpackTrophies[itemId]
+			if itemData then
+				local atlasIndex = 1
+				if type(pinData[4]) == 'string' then
+					atlasIndex = TREASURE_MAP_TEXTURES[someIdentifier]
+				elseif pinData[4] then
+					atlasIndex = itemData.stackCount > 1 and 4 or 3
+				else
+					atlasIndex = 2
+				end
+
+				if not atlasIndex then error('No texture selected') end
+
+				-- TODO: tint
+				-- local pinTag = { [1] = i, [2] = itemData.slotIndex, texture = atlasIndex }
+
+				local j = #outX + 1
+				outX[j] = pinDatum[1]
+				outY[j] = pinDatum[2]
+				atlasIndices[j] = atlasIndex
+				extra[j] = nil  -- TOD
+			end
+		end
+
+		return outX, outY, atlasIndices, extra
+	end,
+	-- TODO: d('You can find ''..itemData.name..'' in this zone')
+}
+
+PinTypes_[TREASURE_CHESTS] = {
+	name = MAP_PINS_SI_TREASURE_CHESTS,
+	maxDistance = 0.05,
+	level = 100,
+	-- texture = _t('Chest_1.dds'),
+	atlas = _t('dummy8x2.dds'),
+	atlasW = 8,
+	atlasH = 2,
+	size = 22,
+	tint = ZO_ColorDef:New(1, 1, 1, .8),  -- tint=ZO_ColorDef:New(.8,.8,.5,.9)
+	getPins = function(self)
+		local map = _getFileName()
+		local data = MP['Chests'][map]
+
+		if not data then return end  -- TODO: add diagnostic warn
+
+		local x, y = GetMapPlayerPosition('player')  -- TODO
+		local k = GetMapContentType() == MAP_CONTENT_DUNGEON and 4 or 1  -- TODO
+
+		-- TODO: move outside
+		local function isAbilityUnlocked(abilityId)
+			return select(6, GetSkillAbilityInfo(GetSpecificSkillAbilityKeysByAbilityId(abilityId)))
+		end
+		local findersKeepersUnlocked = isAbilityUnlocked(74580)
+
+		local chestTypesToDraw = findersKeepersUnlocked and 2 or 1
+
+		local outX, outY, atlasIndex, extra = {}, {}, {}, {}
+		for chestType = 1, #chestTypesToDraw do
+			local coords = data[chestType]
+
+			for i = 1, #coords do
+				local pinDatum = coords[i]
+				-- if math.abs(pinDatum[1] - x) < 0.08 * k and math.abs(pinDatum[2] - y) < 0.08 * k then
+				-- TODO: how this updates?
+				if true then
+					local j = #outX + 1
+					outX[j] = pinDatum[1]
+					outY[j] = pinDatum[2]
+					atlasIndex[j] = chestType
+					extra[j] = nil
+				end
+			end
+		end
+
+		return outX, outY, atlasIndex, extra
+	end
+
+	-- TODO tint, CustomPins
+	-- if mapData then
+	-- 	local FindersKeepers=IsAbilityUnlocked(74580)
+	-- 	for chType, chData in pairs(mapData) do
+	-- 		for chest, pinData in pairs(chData) do
+	-- 			if math.abs(pinData[1]-x)<ChestsRange*mult and math.abs(pinData[2]-y)<ChestsRange*mult then
+	-- 				if chType==2 and FindersKeepers then
+	-- 					CustomPins[i].tint=ZO_ColorDef:New(.6,.6,1,.8)
+	-- 					PinManager:CreatePin(id,{i,pinData[1], pinData[2]},pinData[1],pinData[2])
+	-- 				elseif chType==1 then
+	-- 					CustomPins[i].tint=ZO_ColorDef:New(1,1,1,.8)
+	-- 					PinManager:CreatePin(id,{i,pinData[1], pinData[2]},pinData[1],pinData[2])
+	-- 				end
+	-- 			end
+	-- 		end
+	-- 	end
+	-- 	CustomPins[i].tint=ZO_ColorDef:New(1,1,1,.8)
+	-- end
+	-- mapData=CustomChestData[subzone]
+	-- if mapData then
+	-- 	CustomPins[i].tint=ZO_ColorDef:New(.4,1,.4,.8)
+	-- 	for chest, pinData in pairs(mapData) do
+	-- 		if math.abs(pinData[1]-x)<ChestsRange*mult and math.abs(pinData[2]-y)<ChestsRange*mult then
+	-- 			PinManager:CreatePin(id,{i,pinData[1], pinData[2]},pinData[1],pinData[2])
+	-- 		end
+	-- 	end
+	-- 	CustomPins[i].tint=ZO_ColorDef:New(1,1,1,.8)
+	-- end
+}
+
+PinTypes_[UNKNOWN_POI] = {
+	name = MAP_PINS_SI_UNKNOWN_POI,
+	maxDistance = 0.05,
+	level = 10,
+	-- texture = function(self) return self.m_PinTag.texture end,
+	-- def_texture = '/esoui/art/icons/poi/poi_areaofinterest_incomplete.dds',
+	atlas = _t('dummy8x2.dds'),
+	atlasW = 8,
+	atlasH = 2,
+	size = 40,
+	tint = ZO_ColorDef:New(.7, .7, .7, .6),
+	getPins = function(self)
+		local zoneIndex = GetCurrentMapZoneIndex()
+		local zoneId = GetZoneId(zoneIndex)
+		local data = MP['UnknownPOI'][zoneId]
+
+		if not data then return end  -- TODO: add diagnostic warn
+
+		local outX, outY, atlasIndex, extra = {}, {}, {}, {}
+		for poiIndex = 1, GetNumPOIs(zoneIndex) do
+			local poiType = GetPOIType(zoneIndex, poiIndex)
+			if poiType ~= POI_TYPE_HOUSE then
+				local objectiveName, objectiveLevel, startDescription, finishedDescription = GetPOIInfo(zoneIndex, poiIndex)
+				if objectiveName ~= '' then
+					local normalizedX, normalizedY, _, icon, _, _, isDiscovered = GetPOIMapInfo(zoneIndex, poiIndex)
+					local extras = nil  -- 1 = Mundus, 2 = Crafting Station
+					if icon:find('mundus') then extras = 1 end
+					if icon:find('crafting') then extras = 2 end
+
+					--check if data is missing
+					if extras == 1 or extras == 2 then
+						if not data or not data[poiIndex] then
+							extras = nil
+						end
+					end
+
+					-- local pinTag={[1] = i, name = objectiveName, texture = icon}
+
+					-- TODO: simplify, move out, it only works in english?
+					local function GetSetDescription(setData)
+						if setData then
+							local itemLink=('|H1:item:%d:370:50:0:0:0:0:0:0:0:0:0:0:0:0:1:0:0:0:10000:0|h|h'):format(setData[1])
+							local _, setName, numBonuses = GetItemLinkSetInfo(itemLink)
+							local setBonuses = zo_strformat('|cEEEEEE<<1>> traits required|r\n', setData[2])
+							local numRequired, Description
+							for i = 1, numBonuses do
+								numRequired, Description = GetItemLinkSetBonusInfo(itemLink, false, i)
+								Description = string.gsub(Description,'%d+ %w+ Health','|cFF2222%1|r')
+								Description = string.gsub(Description,'%d+ %w+ Stamina','|c22FF22%1|r')
+								Description = string.gsub(Description,'%d+ %w+ Magicka','|c5555EE%1|r')
+								Description = string.gsub(Description,'%d+ Health %w+','|cFF2222%1|r')
+								Description = string.gsub(Description,'%d+ Stamina %w+','|c22FF22%1|r')
+								Description = string.gsub(Description,'%d+ Magicka %w+','|c5555EE%1|r')
+								Description = string.gsub(Description,'%d+ Spell Damage','|c5555EE%1|r')
+								Description = string.gsub(Description,'%d+ Weapon Damage','|cBBBBBB%1|r')
+								Description = string.gsub(Description,'%d+ %w+ Critical','|cBB33BB%1|r')
+								setBonuses = setBonuses..Description..(i < numBonuses and '\n' or '')
+							end
+							return zo_strformat('<<1>> set (<<2>> items)', setName, numRequired), setBonuses
+						else
+							return '', ''
+						end
+					end
+
+					local desc
+					if extras == 1 then	 -- Mundus
+						desc = GetAbilityDescription(data[poiIndex])
+					elseif extras == 2 then  -- Crafting station
+						desc, desc = GetSetDescription(data[poiIndex])  -- TODO
+					end
+
+					-- TODO: is norm > 0 really needed?
+					if (not isDiscovered and (normalizedX > 0 or normalizedY > 0)) or extras then
+						local j = #outX + 1
+						outX[j] = normalizedX
+						outY[j] = normalizedY
+						atlasIndex[j] = nil
+						extra[j] = nil
+						-- TODO: size thing is weird
+						-- local size = (BUI and BUI.name == 'BanditsUserInterface' and BUI.init.MiniMap) and 40 * BUI.Vars.PinScale/100 or 40
+						-- ZO_MapPin.PIN_DATA[id].size = size
+					end
+				end
+			end
+		end
+
+		return outX, outY, atlasIndex, extra
+	end
+}
+
+PinTypes_[UNDAUNTED] = {
+	name = MAP_PINS_SI_UNDAUNTED,
+	texture='/esoui/art/icons/crafting_beer_003.dds',
+	[704] = {name='pinType_This_One\'s_On_Me',done=false,ach=true,maxDistance=0.05,level=101,texture='/esoui/art/icons/crafting_beer_003.dds',k=1},
+	[1082] = {name='pinType_Undaunted_Rescuer',done=false,ach=true,maxDistance=0.05,level=101,texture='/esoui/art/icons/ability_warrior_007.dds',k=1},
+	coords = function() return end,
+}
 
 ----[[
--- TODO: currently only "name" part is used 
+-- TODO: currently only 'name' part is used 
 local PinTypes = {
-	[1]={name='pinType_Delve_bosses',done=false,id={},pin={},maxDistance=0.05,level=30,texture='/esoui/art/icons/poi/poi_groupboss_incomplete.dds',k=1.25},--tint=ZO_ColorDef:New(1,1,1,1),
-	[2]={name='pinType_Delve_bosses_done',done=true,id={},pin={},maxDistance=0.05,level=30,texture='/esoui/art/icons/poi/poi_groupboss_complete.dds',k=1.25},
-	[3]={name='pinType_Skyshards',done=false,id={},pin={},maxDistance=0.05,level=100,texture='/'..ADDON_NAME..'/textures/Skyshard_1.dds',k=1.40},
-	[4]={name='pinType_Skyshards_done',done=true,id={},pin={},maxDistance=0.05,level=100,texture='/esoui/art/tutorial/gamepad/achievement_categoryicon_skyshards.dds',k=1.38},
-	[5]={name='pinType_Lore_books',done=false,id={},pin={},maxDistance=0.05,level=100,texture='/'..ADDON_NAME..'/textures/Lorebook_1.dds',k=1,tint=ZO_ColorDef:New(.6,.6,1,.8)},
---	[5]={name='pinType_Lore_books_done',done=true,id={},pin={},maxDistance=0.05,level=30,texture='/'..AddonName..'/textures/Lorebook_2.dds',k=1,tint=ZO_ColorDef:New(.6,.6,1,.8)},
-	[6]={name='pinType_Treasure_Maps',done=false,id={},pin={},maxDistance=0.05,level=101,texture=function(self) return self.m_PinTag.texture end,def_texture='/'..ADDON_NAME..'/textures/Treasure_1.dds',k=1.4},
-	[7]={name='pinType_Treasure_Chests',done=false,id={},pin={},maxDistance=0.05,level=100,texture='/'..ADDON_NAME..'/textures/Chest_1.dds',k=1.1,tint=ZO_ColorDef:New(1,1,1,.8)},	--,tint=ZO_ColorDef:New(.8,.8,.5,.9)
-	[8]={name='pinType_Unknown_POI',done=false,id={},pin={},maxDistance=0.05,level=10,texture=function(self) return self.m_PinTag.texture end,def_texture='/esoui/art/icons/poi/poi_areaofinterest_incomplete.dds',size=40,tint=ZO_ColorDef:New(.7,.7,.7,.6)},
-	[9]={section=true,name='Undaunted',id={},pin={},texture='/esoui/art/icons/crafting_beer_003.dds',
-		[704]={name='pinType_This_One\'s_On_Me',done=false,ach=true,maxDistance=0.05,level=101,texture='/esoui/art/icons/crafting_beer_003.dds',k=1},
-		[1082]={name='pinType_Undaunted_Rescuer',done=false,ach=true,maxDistance=0.05,level=101,texture='/esoui/art/icons/ability_warrior_007.dds',k=1}
-		},
 	[10]={section=true,name='World_achievements',id={},pin={},texture='/esoui/art/progression/progression_indexicon_world_up.dds',
 		[872]={name='pinType_I_like_M\'aiq',done=false,ach=true,maxDistance=0.05,level=101,texture='/esoui/art/icons/achievement_066.dds',k=1},
 		[873]={name='pinType_Lightbringer',done=false,ach=true,maxDistance=0.05,level=101,texture='/esoui/art/miscellaneous/help_icon.dds',k=1.25},
@@ -211,7 +707,7 @@ function addon:Initialize()
 	-- self:MakeFiltersScroll()
 	self:AddFilterControls()
 
-	self.canvases = {}  -- TODO: temporary
+	self.surfaces = {}  -- TODO: temporary
 
 	self:RegisterEvents()
 end
@@ -225,7 +721,7 @@ function addon:MakeFiltersScroll()
 	local function _makePanelScroll(panel)
 		if not panel then return end
 
-		local containerScrollChild = ZO_WorldMapFiltersPvEContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual("ZO_WorldMapFiltersPvEContainer", ZO_WorldMapFiltersPvE, "ZO_ScrollContainer"):GetNamedChild("ScrollChild")
+		local containerScrollChild = ZO_WorldMapFiltersPvEContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual('ZO_WorldMapFiltersPvEContainer', ZO_WorldMapFiltersPvE, 'ZO_ScrollContainer'):GetNamedChild('ScrollChild')
 
 		if panel.checkBoxPool then
 			panel.checkBoxPool.parent = containerScrollChild
@@ -263,7 +759,7 @@ function addon:MakeFiltersScroll()
 	--[[
 	if WORLD_MAP_FILTERS.pvePanel then
 		if WORLD_MAP_FILTERS.pvePanel.checkBoxPool then
-			WORLD_MAP_FILTERS.pvePanel.checkBoxPool.parent=ZO_WorldMapFiltersPvEContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual("ZO_WorldMapFiltersPvEContainer",ZO_WorldMapFiltersPvE,"ZO_ScrollContainer"):GetNamedChild("ScrollChild")
+			WORLD_MAP_FILTERS.pvePanel.checkBoxPool.parent=ZO_WorldMapFiltersPvEContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual('ZO_WorldMapFiltersPvEContainer',ZO_WorldMapFiltersPvE,'ZO_ScrollContainer'):GetNamedChild('ScrollChild')
 			for i,control in pairs(WORLD_MAP_FILTERS.pvePanel.checkBoxPool.m_Active) do
 				control:SetParent(WORLD_MAP_FILTERS.pvePanel.checkBoxPool.parent)
 			end
@@ -276,7 +772,7 @@ function addon:MakeFiltersScroll()
 		end
 
 		if WORLD_MAP_FILTERS.pvePanel.comboBoxPool then
-			WORLD_MAP_FILTERS.pvePanel.comboBoxPool.parent=ZO_WorldMapFiltersPvEContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual("ZO_WorldMapFiltersPvEContainer",ZO_WorldMapFiltersPvE,"ZO_ScrollContainer"):GetNamedChild("ScrollChild")
+			WORLD_MAP_FILTERS.pvePanel.comboBoxPool.parent=ZO_WorldMapFiltersPvEContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual('ZO_WorldMapFiltersPvEContainer',ZO_WorldMapFiltersPvE,'ZO_ScrollContainer'):GetNamedChild('ScrollChild')
 			for i,control in pairs(WORLD_MAP_FILTERS.pvePanel.comboBoxPool.m_Active) do
 				control:SetParent(WORLD_MAP_FILTERS.pvePanel.comboBoxPool.parent)
 			end
@@ -292,7 +788,7 @@ function addon:MakeFiltersScroll()
 
 	if WORLD_MAP_FILTERS.pvpPanel then
 		if WORLD_MAP_FILTERS.pvpPanel.checkBoxPool then
-			WORLD_MAP_FILTERS.pvpPanel.checkBoxPool.parent=ZO_WorldMapFiltersPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual("ZO_WorldMapFiltersPvPContainer",ZO_WorldMapFiltersPvP,"ZO_ScrollContainer"):GetNamedChild("ScrollChild")
+			WORLD_MAP_FILTERS.pvpPanel.checkBoxPool.parent=ZO_WorldMapFiltersPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual('ZO_WorldMapFiltersPvPContainer',ZO_WorldMapFiltersPvP,'ZO_ScrollContainer'):GetNamedChild('ScrollChild')
 			for i,control in pairs(WORLD_MAP_FILTERS.pvpPanel.checkBoxPool.m_Active) do
 				control:SetParent(WORLD_MAP_FILTERS.pvpPanel.checkBoxPool.parent)
 			end
@@ -304,7 +800,7 @@ function addon:MakeFiltersScroll()
 			end
 		end
 		if WORLD_MAP_FILTERS.pvpPanel.comboBoxPool then
-			WORLD_MAP_FILTERS.pvpPanel.comboBoxPool.parent=ZO_WorldMapFiltersPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual("ZO_WorldMapFiltersPvPContainer",ZO_WorldMapFiltersPvP,"ZO_ScrollContainer"):GetNamedChild("ScrollChild")
+			WORLD_MAP_FILTERS.pvpPanel.comboBoxPool.parent=ZO_WorldMapFiltersPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual('ZO_WorldMapFiltersPvPContainer',ZO_WorldMapFiltersPvP,'ZO_ScrollContainer'):GetNamedChild('ScrollChild')
 			for i,control in pairs(WORLD_MAP_FILTERS.pvpPanel.comboBoxPool.m_Active) do
 				control:SetParent(WORLD_MAP_FILTERS.pvpPanel.comboBoxPool.parent)
 			end
@@ -320,7 +816,7 @@ function addon:MakeFiltersScroll()
 
 	if WORLD_MAP_FILTERS.imperialPvPPanel then
 		if WORLD_MAP_FILTERS.imperialPvPPanel.checkBoxPool then
-			WORLD_MAP_FILTERS.imperialPvPPanel.checkBoxPool.parent=ZO_WorldMapFiltersImperialPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual("ZO_WorldMapFiltersImperialPvPContainer",ZO_WorldMapFiltersImperialPvP,"ZO_ScrollContainer"):GetNamedChild("ScrollChild")
+			WORLD_MAP_FILTERS.imperialPvPPanel.checkBoxPool.parent=ZO_WorldMapFiltersImperialPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual('ZO_WorldMapFiltersImperialPvPContainer',ZO_WorldMapFiltersImperialPvP,'ZO_ScrollContainer'):GetNamedChild('ScrollChild')
 			for i,control in pairs(WORLD_MAP_FILTERS.imperialPvPPanel.checkBoxPool.m_Active) do
 				control:SetParent(WORLD_MAP_FILTERS.imperialPvPPanel.checkBoxPool.parent)
 			end
@@ -332,7 +828,7 @@ function addon:MakeFiltersScroll()
 			end
 		end
 		if WORLD_MAP_FILTERS.imperialPvPPanel.comboBoxPool then
-			WORLD_MAP_FILTERS.imperialPvPPanel.comboBoxPool.parent=ZO_WorldMapFiltersImperialPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual("ZO_WorldMapFiltersImperialPvPContainer",ZO_WorldMapFiltersImperialPvP,"ZO_ScrollContainer"):GetNamedChild("ScrollChild")
+			WORLD_MAP_FILTERS.imperialPvPPanel.comboBoxPool.parent=ZO_WorldMapFiltersImperialPvPContainerScrollChild or WINDOW_MANAGER:CreateControlFromVirtual('ZO_WorldMapFiltersImperialPvPContainer',ZO_WorldMapFiltersImperialPvP,'ZO_ScrollContainer'):GetNamedChild('ScrollChild')
 			for i,control in pairs(WORLD_MAP_FILTERS.imperialPvPPanel.comboBoxPool.m_Active) do
 				control:SetParent(WORLD_MAP_FILTERS.imperialPvPPanel.comboBoxPool.parent)
 			end
@@ -351,10 +847,6 @@ end
 local function _getFormattedMapPlayerPosition()
     local x, y = GetMapPlayerPosition('player')
 	return string.format('%.3f,%.3f', x, y):gsub('0%.', '.')
-end
-
-local function _getFileName()
-    return GetMapTileTexture():match('[^\\/]+$'):lower():gsub('%.dds$', ''):gsub('_[0-9]+$', '')
 end
 
 local LOC = '%s={{%s,%s}},'
@@ -532,15 +1024,17 @@ function addon:AddFilterControls()
 
 	for panelName, pinsData in pairs(panels) do
 		for i in pairs(pinsData) do
-			local label = self:GetCheckboxTypeLabel(i)
-			AddCheckBox(WORLD_MAP_FILTERS[panelName], i, label, onCheckboxChange)
+			if PinTypes_[i] then  -- TODO: temporary plug to hide unfinished filters
+				local label = self:GetCheckboxTypeLabel(i)
+				AddCheckBox(WORLD_MAP_FILTERS[panelName], i, label, onCheckboxChange)
+			end
 		end
 	end
 end
 
 function addon:GetCheckboxTypeLabel(type)  -- TODO: actual names, translated
 	-- return ('Text %d'):format(type)
-	return PinTypes[type].name
+	return GetString(PinTypes_[type].name)
 end
 
 --[[
@@ -560,8 +1054,8 @@ function addon:RegisterEvents()
 		self:UpdateAllPins()
 	end)
 
-	CALLBACK_MANAGER:RegisterCallback("OnWorldMapChanged", function() self:OnMapChanged() end)
-    CALLBACK_MANAGER:RegisterCallback("OnWorldMapModeChanged", function() self:OnMapChanged() end)
+	CALLBACK_MANAGER:RegisterCallback('OnWorldMapChanged', function() self:OnMapChanged() end)
+    CALLBACK_MANAGER:RegisterCallback('OnWorldMapModeChanged', function() self:OnMapChanged() end)
 end
 
 function addon:UpdatePins(type)
@@ -573,42 +1067,55 @@ function addon:UpdatePins(type)
 end
 
 function addon:RemovePins(type)
-	local canvas = self.canvases[type]
+	local canvas = self.surfaces[type]
 	if canvas then
 		canvas:Clear()
 	end
 end
 
-local TYPE_TO_TABLE = {
-	[1] = 'Bosses',
-	[2] = 'Bosses',
-	[3] = 'SkyShards',
-	[4] = 'SkyShards',
-	[5] = 'Lorebooks',
-}
+function addon:AddPins(type_)
+	self:InitializeCanvas(type_)
 
-function addon:AddPins(type)
-	self:InitializeCanvas(type)
-
-	local canvas = self.canvases[type]
+	local canvas = self.surfaces[type_]
 	local map = _getFileName()
+	local desc = PinTypes_[type_]
 
 	df('adding pins to map with file name %s', map)
 
-	if not TYPE_TO_TABLE[type] then return end  -- TODO: remove afterwards, temporary plug
-	local tbl = TYPE_TO_TABLE[type]
+	if not desc then df('Type %d does not exist yet', type_) return end  -- TODO: temporary
+	if not desc.getPins then df('`addPins` not found in (%d) %s', type_, GetString(desc.name)) return end  -- TODO: remove afterwards, temporary plug
 
-	local pinData = MP[tbl][map]
+	-- PinTypes_[type_].addPins(self, canvas)
 
-	if not pinData then return end
-	for i = 1, #pinData do
-		local pinDatum = pinData[i]
-		canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {type, i, map})
+	local X, Y, AI, E = PinTypes_[type_].getPins(self)
+	if not X then return end  -- early exit, no pins at all
+
+	local size = desc.size or DEFAULT_PIN_SIZE  -- TODO: * scale 
+
+	for i = 1, #X do
+		canvas:Add(X[i], Y[i], 0, 0, size, size, AI[i], E[i])
 	end
+
+	--[[
+	if not PinTypes_[type_].coords then df('`coords` not found in (%d) %s', type_, GetString(PinTypes_[type_].name)) return end  -- TODO: remove afterwards, temporary plug
+
+	if type(PinTypes_[type_].coords) == 'string' then
+		local tbl = PinTypes_[type_].coords
+		local pinData = MP[tbl][map]
+
+		if not pinData then return end
+		for i = 1, #pinData do
+			local pinDatum = pinData[i]
+			canvas:Add(pinDatum[1], pinDatum[2], 0, 0, 32, 32, nil, {type_, i, map})
+		end
+	else
+		df('Pin types with non-table coordinates not implemented yet')
+	end
+	--]]
 end
 
 function addon:InitializeCanvas(pinType)
-	if self.canvases[pinType] then return end
+	if self.surfaces[pinType] then return end
 
 	local function _onMouseEnter(tag, surface, composite)
 		df('mouse over type %d', pinType)
@@ -620,20 +1127,37 @@ function addon:InitializeCanvas(pinType)
 		composite:AnimateScale(surface, 1.3, 1, 150)
 	end
 
-	local function _getTexture(type_)
-		if PinTypes[type_].texture and type(PinTypes[type_].texture) == 'string' then
-			return PinTypes[type_].texture
-		end
+	-- local function _getTexture(type_)
+	-- 	if PinTypes_[type_].texture and type(PinTypes_[type_].texture) == 'string' then
+	-- 		return PinTypes_[type_].texture
+	-- 	end
 
-		if PinTypes[type_].def_texture then
-			return PinTypes[type_].def_texture
-		end
+	-- 	if PinTypes_[type_].def_texture then
+	-- 		return PinTypes_[type_].def_texture
+	-- 	end
 
-		return  '/esoui/art/icons/icon_missing.dds'
+	-- 	return  '/esoui/art/icons/icon_missing.dds'
+	-- end
+
+	local surface = LibSurfaceTools.Tools.FlexRect(ZO_WorldMapContainer, nil, _onMouseEnter, _onMouseExit)
+	self.surfaces[pinType] = surface
+
+	local desc = PinTypes_[pinType]
+	if not desc then df('Type %d does not exist yet', pinType) return end  -- TODO: temporary
+	if desc.texture then
+		if type(desc.texture) == 'string' then
+			surface:SetTexture(desc.texture)
+		else
+			surface:SetTexture('/esoui/art/icons/icon_missing.dds')  -- TODO: temrorary
+		end
+	elseif desc.atlas then
+		-- TODO: separate quick check for debugging only
+		if not (desc.atlasW and desc.atlasH) then error(('Atlas W or H is not set for %s'):format(PinTypes_[pinType].name)) end
+		surface:SetTexture(desc.atlas, desc.atlasW, desc.atlasH)
+	else
+		-- TODO: separate quick check for debugging only
+		error(('Nor texture nor atlas is specified for %s'):format(PinTypes_[pinType].name))
 	end
-
-	self.canvases[pinType] = LibSurfaceTools.Tools.FlexRect(ZO_WorldMapContainer, nil, _onMouseEnter, _onMouseExit)
-		:SetTexture(_getTexture(pinType))
 end
 
 function addon:OnMapChanged()
