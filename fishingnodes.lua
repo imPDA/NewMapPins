@@ -204,6 +204,7 @@ MP.FishingZones = {
 	u48_overland_base_east=4460,
 }
 
-MP.FishingAchievements = {[471]=true,[472]=true,[473]=true,[474]=true,[475]=true,[477]=true,[478]=true,[479]=true,[480]=true,[481]=true,[483]=true,[484]=true,[485]=true,[486]=true,[487]=true,[489]=true,[490]=true,[491]=true,[492]=true,[493]=true,[916]=true,[1186]=true,[1339]=true,[1340]=true,[1351]=true,[1431]=true,[1882]=true,[2191]=true,[2240]=true,[2295]=true,[2412]=true,[2566]=true,[2655]=true,[2861]=true,[2981]=true,[3144]=true,[3269]=true,[3500]=true,[3636]=true,[3948]=true,[4404]=true,[4460]=true}
+-- MP.FishingAchievements = {[471]=true,[472]=true,[473]=true,[474]=true,[475]=true,[477]=true,[478]=true,[479]=true,[480]=true,[481]=true,[483]=true,[484]=true,[485]=true,[486]=true,[487]=true,[489]=true,[490]=true,[491]=true,[492]=true,[493]=true,[916]=true,[1186]=true,[1339]=true,[1340]=true,[1351]=true,[1431]=true,[1882]=true,[2191]=true,[2240]=true,[2295]=true,[2412]=true,[2566]=true,[2655]=true,[2861]=true,[2981]=true,[3144]=true,[3269]=true,[3500]=true,[3636]=true,[3948]=true,[4404]=true,[4460]=true}
+MP.FishingAchievements = {471, 472, 473, 474, 475, 477, 478, 479, 480, 481, 483, 484, 485, 486, 487, 489, 490, 491, 492, 493, 916, 1186, 1339, 1340, 1351, 1431, 1882, 2191, 2240, 2295, 2412, 2566, 2655, 2861, 2981, 3144, 3269, 3500, 3636, 3948, 4404, 4460}
 
-MP.FishingBugFix = {[473]={[3]="River"},[2027]={[8]="Oily"},[472]={[1]="Foul"}}
+-- MP.FishingBugFix = {[473]={[3]="River"},[2027]={[8]="Oily"},[472]={[1]="Foul"}}  -- TODO: is this actually needed?

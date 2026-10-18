@@ -12,7 +12,7 @@ lang/$(language).lua
 
 main.lua
 
-achivements.lua
+achievements.lua
 bosses.lua
 chests.lua
 fishingnodes.lua
@@ -20,6 +20,12 @@ lorebooks.lua
 skyshards.lua
 treasuremaps.lua
 unknownpoi.lua
+timebreaches.lua
+dynamicencounters.lua
+shrines.lua
+volendrung.lua
+portals.lua
+antiquities.lua
 
 extra.lua
 

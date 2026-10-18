@@ -3544,23 +3544,6 @@ bangkorai=18,
 coldharbour=19,
 }
 local AchievementItems={[1712]={},[1250]={},[2099]={},[1958]={},[2320]={},[2463]={},[2534]={},[2669]={},[2759]={}}
-local TimeBreach={
-summerset_base={{.587,.543,2},{.226,.599,2},{.292,.373,2},{.621,.322,2},{.561,.432,2},{.676,.62,2},{.479,.743,2},{.339,.424,2},{.738,.713,2}},
-glenumbra_base={{.735,.199,2},{.336,.509,2},{.436,.807,2}},
-stormhaven_base={{.516,.343,2},{.634,.361,2},{.13,.533,2}},	--{.84,.45,7}},
-alikr_base={{.436,.472,2},{.717,.579,2},{.249,.632,2}},	--{.61,.467,4}},
-eastmarch_base={{.5,.53,3},{.332,.482,3},{.327,.687,3}},
-therift_base={{.737,.367,3},{.078,.259,3},{.318,.23,3}},
-stonefalls_base={{.41,.523,3},{.52,.636,3},{.777,.504,3}},	--{.541,.628,7}},
---bangkorai_base={{.37,.456,4}},
-grahtwood_base={{.291,.506,5},{.682,.463,5},{.23,.219,5}},
-greenshade_base={{.127,.505,5},{.274,.1,5},{.584,.78,5}},	--{.537,.81,7}},
-malabaltor_base={{.492,.346,5},{.647,.727,5},{.81,.242,5}},
-shadowfen_base={{.748,.724,6},{.291,.777,6},{.552,.361,6},{.256,.236,6}},	--{.535,.524,4}},
-deshaan_base={{.338,.572,6},{.1,.58,6},{.594,.44,6},{.78,.396,6},{.79,.57,6}},	--{.734,.616,4}},
-rivenspire_base={{.157,.645,8},{.658,.626,8},{.823,.311,8},{.713,.471,8},{.61,.417,8},{.81,.117,8},{.216,.686,8},{.5,.677,8},{.201,.541,8}},
-craglorn_base={{.177,.222,9},{.394,.383,9},{.242,.579,9},{.77,.687,9},{.654,.604,9},{.383,.7,9}},	--{.639,.566,7}}
-}
 local PinManager,CompassPinManager
 local UpdatingMapPin,UpdatingCompassPin,PinId={},{},{}
 local SavedVars,DefaultVars={},{[1]=true,[2]=true,[3]=true,[4]=false,[5]=true,[6]=false,[7]=true,[8]=true,[9]=false,[10]=false,[11]=false,[12]=false,[13]=false,[14]=false,[15]=false,[16]=false,[17]=false,[18]=false,[19]=false,[21]=true,TimeBreachClosed={},Show={},ColorLore=false,AllFish=false}
@@ -3605,12 +3588,7 @@ local IsChest={["Chest"]=true,["Truhe^f"]=true,["coffre^m"]=true,["Сундук"
 local IsTimeBreach={["Time Breach"]=true,["Zeitriss^m"]=true,["Rupture temporelle^f"]=true,["Временная брешь"]=true,["時の裂け目"]=true}
 local IsThievesTrove={["Thieves Trove"]=true,["Diebesgut^ns"]=true,["trésor des voleurs^m"]=true,["Воровской клад"]=true,["盗賊の宝"]=true}
 local PsijicMap={[6551]=1,[6581]=2,[6584]=3,[6622]=4,[6598]=5,[6588]=6,[6620]=7,[6601]=8,[6604]=9,[6638]=10}
-local Shrines={
-therift_base={{.723,.252,1},{.789,.422,2}},
-bangkorai_base={{.479,.429,1},{.648,.366,2}},
-reapersmarch_base={{.619,.217,1},{.664,.205,2}},
-}
-local ShrineIcon={[1]="/esoui/art/icons/ability_vampire_007.dds",[2]="/esoui/art/icons/ability_werewolf_010.dds"}
+
 local FishIcon={
 	[1]="/esoui/art/icons/crafting_slaughterfish.dds",	--Foul
 	[2]="/esoui/art/icons/crafting_fishing_river_betty.dds",	--River
@@ -3826,35 +3804,7 @@ local FishingZones={
 }
 local FishingAchievements={[471]=true,[472]=true,[473]=true,[474]=true,[475]=true,[477]=true,[478]=true,[479]=true,[480]=true,[481]=true,[483]=true,[484]=true,[485]=true,[486]=true,[487]=true,[489]=true,[490]=true,[491]=true,[492]=true,[493]=true,[916]=true,[1186]=true,[1339]=true,[1340]=true,[1351]=true,[1431]=true,[1882]=true,[2191]=true,[2240]=true,[2295]=true,[2412]=true,[2566]=true,[2655]=true,[2861]=true,[2981]=true,[3144]=true,[3269]=true,[3500]=true,[3636]=true,[3948]=true,[4404]=true,[4460]=true}
 local FishingBugFix={[473]={[3]="River"},[2027]={[8]="Oily"},[472]={[1]="Foul"}}
-local Volendrung={ava_whole={
---ALLIANCE_ALDMERI_DOMINION
-{.483,.791,1},
-{.641,.769,1},
-{.408,.636,1},
-{.34,.709,1},
-{.531,.876,1},
-{.525,.619,1},
-{.304,.536,1},
---ALLIANCE_EBONHEART_PACT
-{.752,.486,2},	--Pact is nearest
-{.685,.532,2},
-{.711,.143,2},
-{.631,.302,2},
-{.776,.278,2},
-{.484,.546,2},
-{.711,.393,2},
-{.595,.382,2},
-{.844,.166,2},
---ALLIANCE_DAGGERFALL_COVENANT
-{.347,.24,3},
-{.199,.372,3},
-{.349,.164,3},
-{.209,.224,3},
-{.108,.231,3},
-{.302,.351,3},
-{.392,.361,3},
-{.483,.22,3},	--Border of the Pact and Covenant
-}}
+
 local ImperialCity={--Provided by remosito
 imperialcity_base={
 [76]={--Bosses
