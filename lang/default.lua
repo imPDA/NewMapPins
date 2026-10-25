@@ -1,20 +1,3 @@
--- MapPins_Localization = MapPins_Localization or {}
--- MapPins_Localization["en"] = {
--- 		--Water
--- 		Lake="Lake",Foul="Foul",River="River",Salt="Salt",Oily="Oily",Mystic="Mystic",Running="Running",
--- 		--Portals
--- 		,Celestial_Rifts="Celestial rifts",Dark_Fissures="Dark fissures",Oblivion_Portals="Oblivion portals",Shadow_Fissures="Shadow fissures",Lava_Lashers="Lava lashers",Soul_Reaper="Soul Reaper",
--- 		--Filters
--- 		Antiquity_Leads="Antiquity leads",
-		-- ,IC_Bosses="Bosses",IC_Respawns="Respawns",
--- 		Cunning_Scamp="Cunning Scamp",Trove_Scamp="Trove Scamp",
--- 		Orsinium_world_event="Random encounters",
--- 		Summerset_world_event="Random encounters",
--- 		Random_Encounters="Random encounters",
-
--- 		--DLC	
--- 		}
-
 local CSI = ZO_CreateStringId
 
 CSI('MAP_PINS_SI_DELVE_BOSSES', 'Delve bosses')
@@ -39,6 +22,7 @@ CSI('MAP_PINS_SI_CLOCKWORK_CITY', 'Clockwork City')
 CSI('MAP_PINS_SI_MURKMIRE', 'Murkmire')
 CSI('MAP_PINS_SI_ELSWEYR', 'Elsweyr')
 CSI('MAP_PINS_SI_VOLENDRUNG', 'Volendrung')
+CSI('MAP_PINS_SI_VOLENDRUNG_SPAWN_LOCATION', 'Volendrung spawn location')  -- TODO: added
 CSI('MAP_PINS_SI_MARKARTH', 'Markarth')
 CSI('MAP_PINS_SI_GREYMOOR', 'Greymoor')
 CSI('MAP_PINS_SI_ANTIQUITIES', 'Antiquities')
@@ -51,6 +35,32 @@ CSI('MAP_PINS_SI_NECROM', 'Necrom')
 CSI('MAP_PINS_SI_GOLD_ROAD', 'Gold Road')
 CSI('MAP_PINS_SI_SEASONS_OF_THE_WORM_CULT', 'Seasons of the Worm Cult')
 CSI('MAP_PINS_SI_DYNAMIC_ENCOUNTERS', 'Dynamic Encounters')
+CSI('MAP_PINS_SI_ANTIQUITY_LEADS', 'Antiquity leads')
 
+CSI('MAP_PINS_SI_FISHING_NODE_LAKE', 'Lake')
+CSI('MAP_PINS_SI_FISHING_NODE_FOUL', 'Foul')
+CSI('MAP_PINS_SI_FISHING_NODE_RIVER', 'River')
+CSI('MAP_PINS_SI_FISHING_NODE_SALT', 'Salt')
+CSI('MAP_PINS_SI_FISHING_NODE_OILY', 'Oily')
+CSI('MAP_PINS_SI_FISHING_NODE_MYSTIC', 'Mystic')
+CSI('MAP_PINS_SI_FISHING_NODE_RUNNING', 'Running')
+
+CSI('MAP_PINS_SI_PORTAL_OBLIVION_PORTALS', 'Oblivion portals')
+CSI('MAP_PINS_SI_PORTAL_DARK_FISSURES', 'Dark fissures')
+CSI('MAP_PINS_SI_PORTAL_CELESTIAL_RIFTS', 'Celestial rifts')  -- TODO: singular form?
+CSI('MAP_PINS_SI_PORTAL_SHADOW_FISSURES', 'Shadow fissures')
+CSI('MAP_PINS_SI_PORTAL_LAVA_LASHERS', 'Lava lashers')
+CSI('MAP_PINS_SI_PORTAL_SOUL_REAPER', 'Soul Reaper')
+
+CSI('MAP_PINS_SI_IC_BOSSES', 'Bosses')
+CSI('MAP_PINS_SI_IC_RESPAWNS', 'Respawns')
+
+CSI('MAP_PINS_SI_CUNNING_SCAMP', 'Cunning Scamp')
+CSI('MAP_PINS_SI_TROVE_SCAMP', 'Trove Scamp')
+
+CSI('MAP_PINS_SI_ORSINIUM_WORLD_EVENT', 'Random encounters')
+CSI('MAP_PINS_SI_SUMMERSET_WORLD_EVENT', 'Random encounters')
+CSI('MAP_PINS_SI_RANDOM_ENCOUNTERS', 'Random encounters')
+CSI('MAP_PINS_SI_RANDOM_ENCOUNTER', 'Random encounter')  -- TODO: added
 
 -- TODO: reuse existing strings as much as possible
